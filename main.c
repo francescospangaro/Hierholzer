@@ -14,10 +14,10 @@ struct analyzer {
 };
 
 
-void incrementAnalysis(struct arch node, struct analyzer *data) {
+void incrementAnalysis(struct arch node, struct analyzer *data, int nodesCount) {
     int i = 0;
     int checkFrom = 0, checkTo = 0;
-    while ((data[i].nodeName != node.nodeTo) || (data[i].nodeName != node.nodeFrom)) {
+    while (((data[i].nodeName != node.nodeTo) || (data[i].nodeName != node.nodeFrom))&&(i<nodesCount)) {
         if (data[i].nodeName == node.nodeTo) {
             data[i].ins++;
             checkTo = 1;
@@ -27,6 +27,11 @@ void incrementAnalysis(struct arch node, struct analyzer *data) {
             checkFrom = 1;
         }
         i++;
+    }
+    if(i==nodesCount){
+        i=0;
+        while(data[i].nodeName!=0)
+            i++;
     }
     if (i == 0) {
         data[i].nodeName = node.nodeTo;
@@ -39,13 +44,12 @@ void incrementAnalysis(struct arch node, struct analyzer *data) {
         return;
     }
     if (checkFrom == 0) {
-        i++;
         data[i].nodeName = node.nodeFrom;
         data[i].outs = 1;
         data[i].ins = 0;
+        i++;
     }
     if (checkTo == 0) {
-        i++;
         data[i].nodeName = node.nodeTo;
         data[i].outs = 0;
         data[i].ins = 1;
@@ -109,11 +113,12 @@ int findEnd(struct analyzer *arches, int nodeCount) {
 
 void findPath(struct arch *arches, int *tPath, int *ePath, int nodeCount, int archesCount) {
     int i = 0, counter = 0, pos = 1;
-    while (pos < nodeCount - 1) {
+    while (pos < nodeCount) {
         while (((tPath[pos] != arches[counter].nodeFrom) || (arches[counter].traversed != 0)) &&
                (counter < archesCount))
             counter++;
-        if (counter == archesCount) {
+        if (counter == archesCount){
+            counter = 0;
             ePath[i] = tPath[pos];
             tPath[pos] = 0;
             i++;
@@ -138,8 +143,14 @@ int main() {
     struct arch *arches = (struct arch *) malloc(sizeof(struct arch) * archesCount);
     struct analyzer *data = (struct analyzer *) malloc(sizeof(struct analyzer) * nodesCount);
 
+    for(int k = 0; k < nodesCount; k++){
+        data[k].nodeName=0;
+        data[k].outs=0;
+        data[k].ins=0;
+    }
+
     int i = 0, count = 0;
-    printf("NB: a node name cannot be 0 AND two nodes cannot share ethe same name\n");
+    printf("NB: a node name cannot be 0 AND two nodes cannot share the same name\n");
     while (i < archesCount) {
         printf("Insert starting node name:\n");
         scanf("%d", &arches[count].nodeFrom);
@@ -148,10 +159,11 @@ int main() {
         if (arches[count].nodeFrom == arches[count].nodeTo)
             i++;
         arches[count].traversed = 0;
+        incrementAnalysis(arches[count], data, nodesCount);
         count++;
         i++;
     }
-    incrementAnalysis(arches[count], data);
+
     if (checkIfPossible(data, nodesCount) != 0) {
         starting = findStart(data, nodesCount);
         ending = findEnd(data, nodesCount);
